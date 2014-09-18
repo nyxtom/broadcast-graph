@@ -1,6 +1,6 @@
 # broadcast-graph
 
-Broadcast-graph is a simple graph backend for example for
+Broadcast-graph is a simple graph backend example for
 [broadcast](http://github.com/nyxtom/broadcast). This backend implements
 various commands useful for updating directed or undirected weighted edges
 as well as weighted vertices. Given that this is an example
