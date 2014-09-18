@@ -23,11 +23,7 @@ type Configuration struct {
 	host string // host of the server
 }
 
-var LogoHeader = `
-    %s %s %
-    Port: %d
-    PID: %d
-`
+var LogoHeader = `%s %s %s, Port: %d, PID: %d`
 
 func main() {
 	// Leverage all cores available
@@ -78,7 +74,7 @@ func main() {
 	}
 
 	// setup default backend
-	backend, err = bdefault.RegisterBackend(app)
+	backend, err := bdefault.RegisterBackend(app)
 	if err != nil {
 		fmt.Println(err)
 		return
