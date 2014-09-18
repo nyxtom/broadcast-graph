@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -12,15 +13,17 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/nyxtom/bgraph"
+	"github.com/nyxtom/broadcast-graph"
 	"github.com/nyxtom/broadcast/backends/bdefault"
 	"github.com/nyxtom/broadcast/protocols/line"
+	"github.com/nyxtom/broadcast/protocols/redis"
 	"github.com/nyxtom/broadcast/server"
 )
 
 type Configuration struct {
-	port int    // port of the server
-	host string // host of the server
+	port      int    // port of the server
+	host      string // host of the server
+	bprotocol string // broadcast protocol configuration
 }
 
 var LogoHeader = `%s %s %s, Port: %d, PID: %d`
@@ -32,12 +35,13 @@ func main() {
 	// Parse out flag parameters
 	var host = flag.String("h", "127.0.0.1", "bgraph host to bind to")
 	var port = flag.Int("p", 7331, "bgraph port to bind to")
+	var bprotocol = flag.String("bprotocol", "redis", "Broadcast protocol configuration")
 	var configFile = flag.String("config", "", "bgraph configuration file (/etc/bgraph.conf)")
 	var cpuProfile = flag.String("cpuprofile", "", "write cpu profile to file")
 
 	flag.Parse()
 
-	cfg := &Configuration{*port, *host}
+	cfg := &Configuration{*port, *host, *bprotocol}
 	if len(*configFile) == 0 {
 		fmt.Printf("[%d] %s # WARNING: no config file specified, using the default config\n", os.Getpid(), time.Now().Format(time.RFC822))
 	} else {
@@ -53,6 +57,19 @@ func main() {
 		}
 	}
 
+	// locate the protocol specified (if there is one)
+	var serverProtocol server.BroadcastServerProtocol
+	if cfg.bprotocol == "" {
+		serverProtocol = server.NewDefaultBroadcastServerProtocol()
+	} else if cfg.bprotocol == "redis" {
+		serverProtocol = redisProtocol.NewRedisProtocol()
+	} else if cfg.bprotocol == "line" {
+		serverProtocol = lineProtocol.NewLineProtocol()
+	} else {
+		fmt.Println(errors.New("Invalid protocol " + cfg.bprotocol + " specified"))
+		return
+	}
+
 	if *cpuProfile != "" {
 		f, err := os.Create(*cpuProfile)
 		if err != nil {
@@ -63,7 +80,7 @@ func main() {
 	}
 
 	// create a new broadcast server
-	app, err := server.ListenProtocol(cfg.port, cfg.host, lineProtocol.NewLineProtocol())
+	app, err := server.ListenProtocol(cfg.port, cfg.host, serverProtocol)
 	app.Header = ""
 	app.Name = "BGraph"
 	app.Version = "0.1.0"
@@ -81,6 +98,7 @@ func main() {
 	}
 	app.LoadBackend(backend)
 
+	// setup bgraph backend
 	backend, err = bgraph.RegisterBackend(app)
 	if err != nil {
 		fmt.Println(err)

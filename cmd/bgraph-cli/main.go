@@ -18,12 +18,13 @@ var helpCommandsMap = make(map[string]int)
 func main() {
 	var ip = flag.String("h", "127.0.0.1", "bgraph server ip (default 127.0.0.1)")
 	var port = flag.Int("p", 7331, "bgraph server port (default 7331)")
+	var bprotocol = flag.String("bprotocol", "redis", "broadcast server protocol to follow")
 	var maxIdle = flag.Int("i", 1, "max idle client connections to pool from")
 
 	flag.Parse()
 
 	addr := *ip + ":" + strconv.Itoa(*port)
-	c, err := broadcast.NewClient(*port, *ip, *maxIdle, "line")
+	c, err := broadcast.NewClient(*port, *ip, *maxIdle, *bprotocol)
 	if err != nil {
 		fmt.Printf(err.Error())
 		os.Exit(1)
