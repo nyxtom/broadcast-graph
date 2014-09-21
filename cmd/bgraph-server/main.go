@@ -26,7 +26,13 @@ type Configuration struct {
 	bprotocol string // broadcast protocol configuration
 }
 
-var LogoHeader = `%s %s %s, Port: %d, PID: %d`
+var LogoHeader = `
+                  
+    |             |       %s %s %s  
+    |_)(_|| (_||_)| |     Port: %d
+        _|     |          PID: %d 
+
+`
 
 func main() {
 	// Leverage all cores available
